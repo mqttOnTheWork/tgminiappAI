@@ -53,7 +53,6 @@
 
     .ai {
       background: #1c1c2e;
-      margin-right: auto;
     }
 
     .chat-input {
@@ -80,15 +79,6 @@
       background: #6a00ff;
       color: #fff;
       font-weight: 600;
-    }
-
-    .history-item,
-    .setting {
-      background: #1c1c2e;
-      padding: 14px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-      font-size: 14px;
     }
 
     .nav {
@@ -121,14 +111,8 @@
       <div id="chat"></div>
     </div>
 
-    <div id="historyScreen" class="screen">
-      <div class="history-item">История диалогов появится позже</div>
-    </div>
-
-    <div id="settingsScreen" class="screen">
-      <div class="setting">AI: Менеджер по продажам</div>
-      <div class="setting">Память: Включена</div>
-    </div>
+    <div id="historyScreen" class="screen"></div>
+    <div id="settingsScreen" class="screen"></div>
   </div>
 
   <div class="chat-input">
@@ -137,29 +121,38 @@
   </div>
 
   <div class="nav">
-    <button class="active" onclick="showScreen('chat', this)">Чат</button>
-    <button onclick="showScreen('history', this)">История</button>
-    <button onclick="showScreen('settings', this)">Настройки</button>
+    <button class="active" onclick="showScreen('chat')">Чат</button>
+    <button onclick="showScreen('history')">История</button>
+    <button onclick="showScreen('settings')">Настройки</button>
   </div>
 
   <script>
-    /* ---------- TELEGRAM ---------- */
-    const tg = window.Telegram.WebApp;
-    tg.ready();
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.ready();
 
-    /* ---------- SESSION ID (ДЛЯ ПАМЯТИ) ---------- */
-    const sessionId =
-      tg?.initDataUnsafe?.user?.id
-        ? String(tg.initDataUnsafe.user.id)
-        : "guest_" + Math.random().toString(36).slice(2);
-
-    /* ---------- CONFIG ---------- */
     const WEBHOOK_URL = "https://mqttyaf.app.n8n.cloud/webhook/ask-ai";
 
-    /* ---------- DOM ---------- */
     const chat = document.getElementById("chat");
     const input = document.getElementById("input");
     const sendBtn = document.getElementById("send");
+
+    // ---------- SESSION ID ----------
+    function getSessionId() {
+      // Telegram user id
+      if (tg && tg.initDataUnsafe?.user?.id) {
+        return "tg_" + tg.initDataUnsafe.user.id;
+      }
+
+      // Browser fallback
+      let id = localStorage.getItem("sessionId");
+      if (!id) {
+        id = "web_" + crypto.randomUUID();
+        localStorage.setItem("sessionId", id);
+      }
+      return id;
+    }
+
+    const sessionId = getSessionId();
 
     function addMessage(text, cls) {
       const div = document.createElement("div");
@@ -181,24 +174,23 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            text: text,
-            sessionId: sessionId
+            text,
+            sessionId
           })
         });
 
         const data = await res.json();
-        addMessage(data.answer || "Нет ответа от AI", "ai");
+        addMessage(data.answer || "Нет ответа", "ai");
       } catch (e) {
         addMessage("Ошибка соединения с сервером", "ai");
       }
     };
 
-    function showScreen(name, btn) {
+    function showScreen(name) {
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
-
       document.getElementById(name + "Screen").classList.add("active");
-      btn.classList.add("active");
+      event.target.classList.add("active");
     }
   </script>
 </body>
