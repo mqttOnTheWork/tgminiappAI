@@ -56,15 +56,6 @@
       background: #1c1c2e;
     }
 
-    .history-item {
-      background: #1c1c2e;
-      padding: 14px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-      font-size: 14px;
-      white-space: pre-wrap;
-    }
-
     .chat-input {
       display: flex;
       gap: 8px;
@@ -117,25 +108,27 @@
   <div class="header">Sales AI</div>
 
   <div class="content">
+    <!-- CHAT -->
     <div id="chatScreen" class="screen active">
       <div id="chat"></div>
     </div>
 
-    <div id="historyScreen" class="screen"></div>
+    <!-- SETTINGS -->
     <div id="settingsScreen" class="screen">
-      <div class="history-item">AI с памятью диалога</div>
-      <div class="history-item">Session ID используется</div>
+      <div class="message ai">AI с памятью диалога (через n8n)</div>
+      <div class="message ai">Session ID используется</div>
     </div>
   </div>
 
+  <!-- INPUT -->
   <div class="chat-input">
     <input id="input" placeholder="Введите сообщение клиенту..." />
     <button id="send">Отправить</button>
   </div>
 
+  <!-- NAV -->
   <div class="nav">
     <button class="active" onclick="showScreen('chat')">Чат</button>
-    <button onclick="showScreen('history')">История</button>
     <button onclick="showScreen('settings')">Настройки</button>
   </div>
 
@@ -165,44 +158,12 @@
 
     const sessionId = getSessionId();
 
-    // ---------- HISTORY ----------
-    function saveHistory(role, text) {
-      const history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
-      history.push({
-        role,
-        text,
-        time: new Date().toLocaleTimeString()
-      });
-      localStorage.setItem("chatHistory", JSON.stringify(history));
-    }
-
-    function loadHistory() {
-      const historyScreen = document.getElementById("historyScreen");
-      historyScreen.innerHTML = "";
-
-      const history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
-
-      if (!history.length) {
-        historyScreen.innerHTML = "<div class='history-item'>История пуста</div>";
-        return;
-      }
-
-      history.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "history-item";
-        div.innerText = `${item.role}: ${item.text}\n${item.time}`;
-        historyScreen.appendChild(div);
-      });
-    }
-
     function addMessage(text, cls) {
       const div = document.createElement("div");
       div.className = "message " + cls;
       div.innerText = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
-
-      saveHistory(cls === "me" ? "Вы" : "AI", text);
     }
 
     sendBtn.onclick = async () => {
@@ -231,8 +192,6 @@
       document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
       document.getElementById(name + "Screen").classList.add("active");
       event.target.classList.add("active");
-
-      if (name === "history") loadHistory();
     }
   </script>
 </body>
