@@ -44,6 +44,7 @@
       border-radius: 14px;
       line-height: 1.4;
       font-size: 14px;
+      white-space: pre-wrap;
     }
 
     .me {
@@ -53,6 +54,15 @@
 
     .ai {
       background: #1c1c2e;
+    }
+
+    .history-item {
+      background: #1c1c2e;
+      padding: 14px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      white-space: pre-wrap;
     }
 
     .chat-input {
@@ -112,7 +122,10 @@
     </div>
 
     <div id="historyScreen" class="screen"></div>
-    <div id="settingsScreen" class="screen"></div>
+    <div id="settingsScreen" class="screen">
+      <div class="history-item">AI с памятью диалога</div>
+      <div class="history-item">Session ID используется</div>
+    </div>
   </div>
 
   <div class="chat-input">
@@ -138,12 +151,10 @@
 
     // ---------- SESSION ID ----------
     function getSessionId() {
-      // Telegram user id
       if (tg && tg.initDataUnsafe?.user?.id) {
         return "tg_" + tg.initDataUnsafe.user.id;
       }
 
-      // Browser fallback
       let id = localStorage.getItem("sessionId");
       if (!id) {
         id = "web_" + crypto.randomUUID();
@@ -154,12 +165,44 @@
 
     const sessionId = getSessionId();
 
+    // ---------- HISTORY ----------
+    function saveHistory(role, text) {
+      const history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+      history.push({
+        role,
+        text,
+        time: new Date().toLocaleTimeString()
+      });
+      localStorage.setItem("chatHistory", JSON.stringify(history));
+    }
+
+    function loadHistory() {
+      const historyScreen = document.getElementById("historyScreen");
+      historyScreen.innerHTML = "";
+
+      const history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+
+      if (!history.length) {
+        historyScreen.innerHTML = "<div class='history-item'>История пуста</div>";
+        return;
+      }
+
+      history.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+        div.innerText = `${item.role}: ${item.text}\n${item.time}`;
+        historyScreen.appendChild(div);
+      });
+    }
+
     function addMessage(text, cls) {
       const div = document.createElement("div");
       div.className = "message " + cls;
       div.innerText = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+
+      saveHistory(cls === "me" ? "Вы" : "AI", text);
     }
 
     sendBtn.onclick = async () => {
@@ -173,15 +216,12 @@
         const res = await fetch(WEBHOOK_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text,
-            sessionId
-          })
+          body: JSON.stringify({ text, sessionId })
         });
 
         const data = await res.json();
         addMessage(data.answer || "Нет ответа", "ai");
-      } catch (e) {
+      } catch {
         addMessage("Ошибка соединения с сервером", "ai");
       }
     };
@@ -191,6 +231,8 @@
       document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
       document.getElementById(name + "Screen").classList.add("active");
       event.target.classList.add("active");
+
+      if (name === "history") loadHistory();
     }
   </script>
 </body>
