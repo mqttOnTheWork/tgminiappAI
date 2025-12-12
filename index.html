@@ -1,31 +1,45 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>AI Mini App</title>
 
-  <!-- Telegram SDK -->
+  <!-- Telegram Mini App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 12px;
-      background: #f5f5f5;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
     }
 
     #chat {
-      background: white;
-      border-radius: 8px;
+      background: #ffffff;
+      border-radius: 10px;
       padding: 10px;
-      height: 300px;
+      height: 70vh;
       overflow-y: auto;
       margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
-    .me { color: #333; margin: 4px 0; }
-    .ai { color: #0a58ca; margin: 4px 0; }
+    .me {
+      text-align: right;
+      margin: 6px 0;
+      color: #333;
+    }
+
+    .ai {
+      text-align: left;
+      margin: 6px 0;
+      color: #0a58ca;
+    }
 
     .row {
       display: flex;
@@ -34,60 +48,95 @@
 
     input {
       flex: 1;
-      padding: 8px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
     }
 
     button {
-      padding: 8px 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: none;
+      background: #0a58ca;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #aaa;
     }
   </style>
 </head>
 
 <body>
+
   <div id="chat"></div>
 
   <div class="row">
-    <input id="input" placeholder="Напиши вопрос…" />
-    <button onclick="send()">Отправить</button>
+    <input id="message" placeholder="Напиши вопрос..." />
+    <button id="sendBtn" onclick="sendMessage()">Отправить</button>
   </div>
 
   <script>
+    // --- Telegram Mini App init ---
     const tg = window.Telegram.WebApp;
+    tg.ready();
     tg.expand();
 
     const chat = document.getElementById("chat");
-    const input = document.getElementById("input");
+    const input = document.getElementById("message");
+    const button = document.getElementById("sendBtn");
 
-    function add(text, cls) {
-      const p = document.createElement("div");
-      p.className = cls;
-      p.innerText = text;
-      chat.appendChild(p);
+    // 🔴 ВСТАВЬ СЮДА СВОЙ PRODUCTION WEBHOOK ИЗ n8n
+    const WEBHOOK_URL = "https://ВАШ_SUBDOMAIN.app.n8n.cloud/webhook/ask-ai";
+
+    function addMessage(text, className) {
+      const div = document.createElement("div");
+      div.className = className;
+      div.innerText = text;
+      chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    async function send() {
+    async function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
 
-      add("Ты: " + text, "me");
+      addMessage(text, "me");
       input.value = "";
+      button.disabled = true;
 
-      const res = await fetch(
-        "https://mqttyaf.app.n8n.cloud/webhook/ask-ai",
-        {
+      try {
+        const response = await fetch(WEBHOOK_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({
             text: text,
-            userId: tg.initDataUnsafe?.user?.id || "anon"
+            user_id: tg.initDataUnsafe?.user?.id || "web"
           })
-        }
-      );
+        });
 
-      const data = await res.json();
-      add("AI: " + data.answer, "ai");
+        const data = await response.json();
+        addMessage(data.answer || "Нет ответа от AI", "ai");
+
+      } catch (err) {
+        addMessage("Ошибка соединения с сервером", "ai");
+      }
+
+      button.disabled = false;
     }
+
+    // Enter = отправка
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
   </script>
+
 </body>
 </html>
