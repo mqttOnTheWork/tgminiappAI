@@ -16,25 +16,22 @@
     }
 
     #chat {
-      background: white;
+      background: #fff;
       border-radius: 8px;
       padding: 10px;
       height: 300px;
       overflow-y: auto;
       margin-bottom: 10px;
-      box-sizing: border-box;
     }
 
     .me {
       color: #333;
       margin: 6px 0;
-      text-align: right;
     }
 
     .ai {
-      color: #0a85d1;
+      color: #0a58ca;
       margin: 6px 0;
-      text-align: left;
     }
 
     .row {
@@ -45,13 +42,10 @@
     input {
       flex: 1;
       padding: 8px;
-      font-size: 14px;
     }
 
     button {
       padding: 8px 12px;
-      font-size: 14px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -65,16 +59,14 @@
   </div>
 
   <script>
-    // Telegram init
     const tg = window.Telegram.WebApp;
     tg.ready();
+
+    const WEBHOOK_URL = "https://mqttyaf.app.n8n.cloud/webhook/ask-ai";
 
     const chat = document.getElementById("chat");
     const input = document.getElementById("input");
     const button = document.getElementById("send");
-
-    // 👉 ВАЖНО: твой production webhook
-    const WEBHOOK_URL = "https://mqttyaf.app.n8n.cloud/webhook/ask-ai";
 
     function addMessage(text, className) {
       const div = document.createElement("div");
@@ -88,7 +80,7 @@
       const text = input.value.trim();
       if (!text) return;
 
-      addMessage(text, "me");
+      addMessage("Ты: " + text, "me");
       input.value = "";
       button.disabled = true;
 
@@ -100,26 +92,23 @@
           },
           body: JSON.stringify({
             text: text,
-            user_id: tg.initDataUnsafe?.user?.id || "anon"
+            user_id: tg?.initDataUnsafe?.user?.id || "web"
           })
         });
 
         const data = await response.json();
 
-        addMessage(
-          data.answer || data.text || JSON.stringify(data),
-          "ai"
-        );
-      } catch (err) {
-        console.error(err);
+        addMessage("AI: " + (data.answer || "Нет ответа"), "ai");
+
+      } catch (e) {
         addMessage("Ошибка соединения с сервером", "ai");
-      } finally {
-        button.disabled = false;
+        console.error(e);
       }
+
+      button.disabled = false;
     }
 
-    button.addEventListener("click", sendMessage);
-
+    button.onclick = sendMessage;
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendMessage();
     });
