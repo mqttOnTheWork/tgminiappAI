@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Mini App</title>
+
+  <!-- Telegram SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 12px;
+      background: #f5f5f5;
+    }
+
+    #chat {
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+
+    .me { color: #333; margin: 4px 0; }
+    .ai { color: #0a58ca; margin: 4px 0; }
+
+    .row {
+      display: flex;
+      gap: 6px;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px;
+    }
+
+    button {
+      padding: 8px 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chat"></div>
+
+  <div class="row">
+    <input id="input" placeholder="Напиши вопрос…" />
+    <button onclick="send()">Отправить</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+
+    function add(text, cls) {
+      const p = document.createElement("div");
+      p.className = cls;
+      p.innerText = text;
+      chat.appendChild(p);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function send() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      add("Ты: " + text, "me");
+      input.value = "";
+
+      const res = await fetch(
+        "https://mqttyaf.app.n8n.cloud/webhook/ask-ai",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: text,
+            userId: tg.initDataUnsafe?.user?.id || "anon"
+          })
+        }
+      );
+
+      const data = await res.json();
+      add("AI: " + data.answer, "ai");
+    }
+  </script>
+</body>
+</html>
