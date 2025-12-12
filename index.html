@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>AI Mini App</title>
 
-  <!-- Telegram Mini App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -80,7 +79,6 @@
   </div>
 
   <script>
-    // --- Telegram Mini App init ---
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
@@ -89,8 +87,7 @@
     const input = document.getElementById("message");
     const button = document.getElementById("sendBtn");
 
-    // 🔴 ВСТАВЬ СЮДА СВОЙ PRODUCTION WEBHOOK ИЗ n8n
-    const WEBHOOK_URL = "https://ВАШ_SUBDOMAIN.app.n8n.cloud/webhook/ask-ai";
+    const WEBHOOK_URL = "https://mqttyaf.app.n8n.cloud/webhook/ask-ai";
 
     function addMessage(text, className) {
       const div = document.createElement("div");
@@ -130,7 +127,6 @@
       button.disabled = false;
     }
 
-    // Enter = отправка
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         sendMessage();
@@ -140,3 +136,4 @@
 
 </body>
 </html>
+
