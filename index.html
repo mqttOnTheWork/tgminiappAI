@@ -4,40 +4,37 @@
   <meta charset="UTF-8" />
   <title>AI Mini App</title>
 
+  <!-- Telegram Mini App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
-      padding: 10px;
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      margin: 0;
+      padding: 12px;
+      background: #f5f5f5;
     }
 
     #chat {
-      background: #ffffff;
-      border-radius: 10px;
+      background: white;
+      border-radius: 8px;
       padding: 10px;
-      height: 70vh;
+      height: 300px;
       overflow-y: auto;
       margin-bottom: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-sizing: border-box;
     }
 
     .me {
-      text-align: right;
-      margin: 6px 0;
       color: #333;
+      margin: 6px 0;
+      text-align: right;
     }
 
     .ai {
-      text-align: left;
+      color: #0a85d1;
       margin: 6px 0;
-      color: #0a58ca;
+      text-align: left;
     }
 
     .row {
@@ -47,46 +44,36 @@
 
     input {
       flex: 1;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      padding: 8px;
       font-size: 14px;
     }
 
     button {
-      padding: 10px 14px;
-      border-radius: 6px;
-      border: none;
-      background: #0a58ca;
-      color: #fff;
+      padding: 8px 12px;
       font-size: 14px;
       cursor: pointer;
     }
-
-    button:disabled {
-      background: #aaa;
-    }
   </style>
 </head>
-
 <body>
 
   <div id="chat"></div>
 
   <div class="row">
-    <input id="message" placeholder="Напиши вопрос..." />
-    <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+    <input id="input" placeholder="Напиши вопрос..." />
+    <button id="send">Отправить</button>
   </div>
 
   <script>
+    // Telegram init
     const tg = window.Telegram.WebApp;
     tg.ready();
-    tg.expand();
 
     const chat = document.getElementById("chat");
-    const input = document.getElementById("message");
-    const button = document.getElementById("sendBtn");
+    const input = document.getElementById("input");
+    const button = document.getElementById("send");
 
+    // 👉 ВАЖНО: твой production webhook
     const WEBHOOK_URL = "https://mqttyaf.app.n8n.cloud/webhook/ask-ai";
 
     function addMessage(text, className) {
@@ -113,27 +100,30 @@
           },
           body: JSON.stringify({
             text: text,
-            user_id: tg.initDataUnsafe?.user?.id || "web"
+            user_id: tg.initDataUnsafe?.user?.id || "anon"
           })
         });
 
         const data = await response.json();
-        addMessage(data.answer || "Нет ответа от AI", "ai");
 
+        addMessage(
+          data.answer || data.text || JSON.stringify(data),
+          "ai"
+        );
       } catch (err) {
+        console.error(err);
         addMessage("Ошибка соединения с сервером", "ai");
+      } finally {
+        button.disabled = false;
       }
-
-      button.disabled = false;
     }
 
+    button.addEventListener("click", sendMessage);
+
     input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        sendMessage();
-      }
+      if (e.key === "Enter") sendMessage();
     });
   </script>
 
 </body>
 </html>
-
